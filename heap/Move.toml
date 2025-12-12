@@ -1,0 +1,15 @@
+[package]
+name = "heap"
+version = "1.0.0"
+authors = []
+
+[addresses]
+heap="311fa169ad247418caa9528906f5249615c367724da96e30e2dc86f250f3b371"
+[dev-addresses]
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-framework.git"
+rev = "mainnet"
+subdir = "aptos-framework"
+
+[dev-dependencies]

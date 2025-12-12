@@ -1,0 +1,16 @@
+[package]
+name = "dynamic_dispatch"
+version = "1.0.0"
+authors = []
+
+[addresses]
+demo= "532b2c7abd6edd92080db800248d32c070d5af5afb0ff75d093f9e9d0360d8fb"
+
+[dev-addresses]
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-framework.git"
+rev = "mainnet"
+subdir = "aptos-framework"
+
+[dev-dependencies]
