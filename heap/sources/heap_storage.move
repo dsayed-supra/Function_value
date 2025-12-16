@@ -1,11 +1,9 @@
 module heap::heap_storage {
     use std::signer;
-    use heap::heap::{Self, Heap};
+    use heap::heap_operations;
 
-    struct StoredHeap has key {
-        heap: Heap<u64>,
-    }
-
+    
+    // FUNCTION VALUE STORAGE
     struct HeapOperations has key {
         initialize_max_heap: |&signer| has store + copy,
         initialize_min_heap: |&signer| has store + copy,
@@ -13,12 +11,13 @@ module heap::heap_storage {
         extract: |&signer| has store + copy,
     }
 
-    public entry fun initialize_module(
-        account: &signer) {
-        let init_max_fn = |s: &signer| initialize_max_heap(s);
-        let init_min_fn = |s: &signer| initialize_min_heap(s);
-        let insert_fn = |s: &signer, v: u64| insert(s, v);
-        let extract_fn = |s: &signer| extract(s);
+    
+    public entry fun initialize_module(account: &signer) {
+        
+        let init_max_fn = |s: &signer| heap_operations::init_max_heap(s);
+        let init_min_fn = |s: &signer| heap_operations::init_min_heap(s);
+        let insert_fn = |s: &signer, v: u64| heap_operations::insert(s, v);
+        let extract_fn = |s: &signer| heap_operations::extract(s);
 
         let function_store = HeapOperations {
             initialize_max_heap: init_max_fn,
@@ -30,168 +29,62 @@ module heap::heap_storage {
         move_to(account, function_store);
     }
 
-    #[persistent]
-    public fun initialize_max_heap(account: &signer) {
-        let heap = heap::new_max_heap();
-        move_to(account, StoredHeap { heap });
-    }
-
-    #[persistent]
-    public fun initialize_min_heap(account: &signer) {
-        let heap = heap::new_min_heap();
-        move_to(account, StoredHeap { heap });
-    }
-
-    #[persistent]
-    public fun insert(account: &signer, value: u64) acquires StoredHeap {
-        let addr = signer::address_of(account);
-        let stored = borrow_global_mut<StoredHeap>(addr);
-        heap::insert(&mut stored.heap, value);
-    }
-
-    #[persistent]
-    public fun extract(account: &signer) acquires StoredHeap {
-        let addr = signer::address_of(account);
-        let stored = borrow_global_mut<StoredHeap>(addr);
-        heap::extract(&mut stored.heap);
-    }
-
-
-    /// Execute initialize_max_heap operation dynamically
+  
+    // DYNAMIC OPERATION EXECUTION
     public entry fun execute_init_max_heap(s: &signer) 
         acquires HeapOperations 
     {
         let addr = signer::address_of(s);
-        
-        // Move out operations (similar to your Calculator pattern)
-        let HeapOperations { 
-            initialize_max_heap, 
-            initialize_min_heap, 
-            insert, 
-            extract 
-        } = move_from<HeapOperations>(addr);
-        
-        // Execute the stored function
-        (initialize_max_heap)(s);
-        
-        // Move operations back
-        move_to(s, HeapOperations {
-            initialize_max_heap,
-            initialize_min_heap,
-            insert,
-            extract,
-        });
-        
-        
+        let ops = borrow_global<HeapOperations>(addr);
+        (ops.initialize_max_heap)(s);
     }
 
-    /// Execute initialize_min_heap operation dynamically
     public entry fun execute_init_min_heap(s: &signer) 
         acquires HeapOperations 
     {
         let addr = signer::address_of(s);
-        
-        let HeapOperations { 
-            initialize_max_heap, 
-            initialize_min_heap, 
-            insert, 
-            extract 
-        } = move_from<HeapOperations>(addr);
-        
-        // Execute the stored function
-        (initialize_min_heap)(s);
-        
-        move_to(s, HeapOperations {
-            initialize_max_heap,
-            initialize_min_heap,
-            insert,
-            extract,
-        });
-        
-       
+        let ops = borrow_global<HeapOperations>(addr);
+        (ops.initialize_min_heap)(s);
     }
 
-    /// Execute insert operation dynamically
     public entry fun execute_insert(s: &signer, value: u64) 
         acquires HeapOperations 
     {
         let addr = signer::address_of(s);
-        
-        let HeapOperations { 
-            initialize_max_heap, 
-            initialize_min_heap, 
-            insert, 
-            extract 
-        } = move_from<HeapOperations>(addr);
-        
-        // Execute the stored insert function
-        (insert)(s, value);
-        
-        move_to(s, HeapOperations {
-            initialize_max_heap,
-            initialize_min_heap,
-            insert,
-            extract,
-        });
-        
-       
+        let ops = borrow_global<HeapOperations>(addr);
+        (ops.insert)(s, value);
     }
 
-    /// Execute extract operation dynamically
     public entry fun execute_extract(s: &signer) 
         acquires HeapOperations 
     {
         let addr = signer::address_of(s);
-        
-        let HeapOperations { 
-            initialize_max_heap, 
-            initialize_min_heap, 
-            insert, 
-            extract 
-        } = move_from<HeapOperations>(addr);
-        
-        // Execute the stored extract function
-        (extract)(s);
-        
-        move_to(s, HeapOperations {
-            initialize_max_heap,
-            initialize_min_heap,
-            insert,
-            extract,
-        });
-        
-       
+        let ops = borrow_global<HeapOperations>(addr);
+        (ops.extract)(s);
+    }
+   
+    #[view]
+    public fun peek(addr: address): u64 {
+        heap_operations::peek(addr)
     }
 
-    /// View top value
     #[view]
-    public fun peek(addr: address): u64 acquires StoredHeap {
-        let stored = borrow_global<StoredHeap>(addr);
-        heap::peek(&stored.heap)
+    public fun size(addr: address): u64 {
+        heap_operations::size(addr)
     }
 
-    /// View heap size
     #[view]
-    public fun size(addr: address): u64 acquires StoredHeap {
-        let stored = borrow_global<StoredHeap>(addr);
-        heap::size(&stored.heap)
-    }
-
-    /// Check if empty
-    #[view]
-    public fun is_empty(addr: address): bool acquires StoredHeap {
-        let stored = borrow_global<StoredHeap>(addr);
-        heap::is_empty(&stored.heap)
+    public fun is_empty(addr: address): bool {
+        heap_operations::is_empty(addr)
     }
 
     #[test(account = @heap)]
     public fun test_dynamic_heap_operations(account: &signer) 
-        acquires HeapOperations, StoredHeap 
+        acquires HeapOperations 
     {
         use std::signer;
        
         initialize_module(account);
-        
         execute_init_max_heap(account);
         
         let addr = signer::address_of(account);
@@ -200,24 +93,22 @@ module heap::heap_storage {
         execute_insert(account, 20);
         execute_insert(account, 5);
         
-        
         assert!(peek(addr) == 20, 1);
         assert!(size(addr) == 3, 2);
         
         execute_extract(account);
         
-        assert!(size(addr) == 2, 4);
-       
+        assert!(size(addr) == 2, 3);
+        assert!(peek(addr) == 10, 4);
     }
 
     #[test(account = @heap)]
     public fun test_min_heap_operations(account: &signer) 
-        acquires HeapOperations, StoredHeap 
+        acquires HeapOperations 
     {
         use std::signer;
         
         initialize_module(account);
-        
         execute_init_min_heap(account);
         
         let addr = signer::address_of(account);
@@ -226,12 +117,227 @@ module heap::heap_storage {
         execute_insert(account, 20);
         execute_insert(account, 5);
         
-        // Min heap: 5 should be at top
         assert!(peek(addr) == 5, 1);
         
         execute_extract(account);
-        
-        // After extracting 5, next min should be 10
         assert!(peek(addr) == 10, 2);
+    }
+
+    
+
+    #[test(account = @heap)]
+    public fun test_multiple_operations(account: &signer) 
+        acquires HeapOperations 
+    {
+        use std::signer;
+        
+        initialize_module(account);
+        execute_init_max_heap(account);
+        let addr = signer::address_of(account);
+        
+        execute_insert(account, 5);
+        execute_insert(account, 10);
+        assert!(peek(addr) == 10, 1);
+        
+        execute_extract(account);
+        assert!(peek(addr) == 5, 2);
+        
+        execute_insert(account, 15);
+        execute_insert(account, 3);
+        assert!(peek(addr) == 15, 3);
+    }
+
+    #[test(account = @heap)]
+    public fun test_empty_operations(account: &signer) 
+        acquires HeapOperations 
+    {
+        use std::signer;
+        
+        initialize_module(account);
+        execute_init_max_heap(account);
+        let addr = signer::address_of(account);
+        
+        assert!(is_empty(addr), 1);
+        assert!(size(addr) == 0, 2);
+        
+        execute_insert(account, 42);
+        assert!(!is_empty(addr), 3);
+        assert!(size(addr) == 1, 4);
+    }
+
+    #[test(account = @heap)]
+    public fun test_batch_operations(account: &signer) 
+        acquires HeapOperations 
+    {
+        use std::signer;
+        
+        initialize_module(account);
+        execute_init_max_heap(account);
+        let addr = signer::address_of(account);
+        
+        let i = 0;
+        while (i < 10) {
+            execute_insert(account, i);
+            i = i + 1;
+        };
+        
+        assert!(size(addr) == 10, 1);
+        assert!(peek(addr) == 9, 2);
+        
+        execute_extract(account);
+        execute_extract(account);
+        execute_extract(account);
+        
+        assert!(size(addr) == 7, 3);
+    }
+
+    #[test(account = @heap)]
+    public fun test_alternating_insert_extract(account: &signer) 
+        acquires HeapOperations 
+    {
+        use std::signer;
+        
+        initialize_module(account);
+        execute_init_max_heap(account);
+        let addr = signer::address_of(account);
+        
+        execute_insert(account, 10);
+        execute_insert(account, 20);
+        assert!(size(addr) == 2, 1);
+        
+        execute_extract(account);
+        assert!(size(addr) == 1, 2);
+        
+        execute_insert(account, 30);
+        execute_insert(account, 5);
+        assert!(size(addr) == 3, 3);
+        assert!(peek(addr) == 30, 4);
+    }
+
+    #[test(account = @heap)]
+    public fun test_single_element(account: &signer) 
+        acquires HeapOperations 
+    {
+        use std::signer;
+        
+        initialize_module(account);
+        execute_init_min_heap(account);
+        let addr = signer::address_of(account);
+        
+        execute_insert(account, 42);
+        
+        assert!(peek(addr) == 42, 1);
+        assert!(size(addr) == 1, 2);
+        assert!(!is_empty(addr), 3);
+        
+        execute_extract(account);
+        assert!(is_empty(addr), 4);
+    }
+
+    #[test(account = @heap)]
+    public fun test_duplicate_values(account: &signer) 
+        acquires HeapOperations 
+    {
+        use std::signer;
+        
+        initialize_module(account);
+        execute_init_max_heap(account);
+        let addr = signer::address_of(account);
+        
+        execute_insert(account, 10);
+        execute_insert(account, 10);
+        execute_insert(account, 10);
+        execute_insert(account, 5);
+        
+        assert!(size(addr) == 4, 1);
+        assert!(peek(addr) == 10, 2);
+        
+        execute_extract(account);
+        assert!(peek(addr) == 10, 3);
+    }
+
+    #[test(account = @heap)]
+    #[expected_failure()]
+    public fun test_double_init_fails(account: &signer) 
+        acquires HeapOperations 
+    {
+        initialize_module(account);
+        execute_init_max_heap(account);
+        execute_init_max_heap(account);
+    }
+
+    #[test(account = @heap)]
+    #[expected_failure(abort_code = 0x1, location = heap::heap)]
+    public fun test_extract_empty_fails(account: &signer) 
+        acquires HeapOperations 
+    {
+        initialize_module(account);
+        execute_init_max_heap(account);
+        execute_extract(account);
+    }
+
+    #[test(account = @heap)]
+    #[expected_failure(abort_code = 0x2, location = heap::heap)]
+    public fun test_peek_empty_fails(account: &signer) 
+        acquires HeapOperations 
+    {
+        use std::signer;
+        
+        initialize_module(account);
+        execute_init_max_heap(account);
+        let addr = signer::address_of(account);
+        peek(addr);
+    }
+
+    #[test(account = @heap)]
+    public fun test_function_value_persistence(account: &signer) 
+        acquires HeapOperations 
+    {
+        use std::signer;
+        
+        initialize_module(account);
+        execute_init_max_heap(account);
+        let addr = signer::address_of(account);
+        
+        // Call same function value multiple times
+        execute_insert(account, 1);
+        execute_insert(account, 2);
+        execute_insert(account, 3);
+        
+        assert!(size(addr) == 3, 1);
+        
+        execute_extract(account);
+        execute_extract(account);
+        
+        assert!(size(addr) == 1, 2);
+    }
+
+    #[test(account = @heap)]
+    public fun test_large_heap(account: &signer) 
+        acquires HeapOperations 
+    {
+        use std::signer;
+        
+        initialize_module(account);
+        execute_init_max_heap(account);
+        let addr = signer::address_of(account);
+        
+        let i = 0;
+        while (i < 50) {
+            execute_insert(account, i);
+            i = i + 1;
+        };
+        
+        assert!(size(addr) == 50, 1);
+        assert!(peek(addr) == 49, 2);
+        
+        let j = 0;
+        while (j < 10) {
+            execute_extract(account);
+            j = j + 1;
+        };
+        
+        assert!(size(addr) == 40, 3);
+        assert!(peek(addr) == 39, 4);
     }
 }

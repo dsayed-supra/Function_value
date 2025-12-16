@@ -26,15 +26,6 @@ module heap::heap {
         b > a
     }
 
-    
-    // public fun new<T: store + drop + copy>(
-    //     comparator: |T, T|bool has store + copy + drop,
-    // ): Heap<T> {
-    //     Heap {
-    //         data: vector::empty<T>(),
-    //         comparator,
-    //     }
-    // }
 
     public fun new_max_heap(): Heap<u64> {
         Heap {
@@ -73,7 +64,7 @@ module heap::heap {
     }
 
     public fun peek<T: store + drop + copy>(heap: &Heap<T>): T {
-        assert!(!is_empty(heap), 2); // ERROR_EMPTY_HEAP
+        assert!(!is_empty(heap), 2); 
         *vector::borrow(&heap.data, 0)
     }
 
