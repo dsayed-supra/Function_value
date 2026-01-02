@@ -10,33 +10,33 @@ module heap::heap {
 
     /// Max heap comparator: a > b
     #[persistent]
-    public fun max_comparator(a: u64, b: u64): bool {
+    public fun max_comparator<T: store + drop + copy>(a: T, b: T): bool {
         a > b
     }
 
     /// Min heap comparator: a < b
     #[persistent]
-    public fun min_comparator(a: u64, b: u64): bool {
+    public fun min_comparator<T: store + drop + copy>(a: T, b: T): bool {
         a < b
     }
 
     /// Reverse comparator for testing
     #[persistent]
-    public fun reverse_comparator(a: u64, b: u64): bool {
+    public fun reverse_comparator<T: store + drop + copy>(a: T, b: T): bool {
         b > a
     }
 
 
-    public fun new_max_heap(): Heap<u64> {
+    public fun new_max_heap<T: store + drop + copy>(): Heap<T> {
         Heap {
-            data: vector::empty<u64>(),
+            data: vector::empty<T>(),
             comparator: max_comparator,  // Reference to persistent function
         }
     }
 
-    public fun new_min_heap(): Heap<u64> {
+    public fun new_min_heap<T: store + drop + copy>(): Heap<T> {
         Heap {
-            data: vector::empty<u64>(),
+            data: vector::empty<T>(),
             comparator: min_comparator,  // Reference to persistent function
         }
     }
