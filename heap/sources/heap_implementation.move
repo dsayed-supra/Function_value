@@ -26,6 +26,15 @@ module heap::heap {
         b > a
     }
 
+    public fun new<T: store + drop + copy>(
+        comparator: |T, T|bool has store + copy + drop,
+    ): Heap<T> {
+        Heap {
+            data: vector::empty<T>(),
+            comparator,
+        }
+    }
+
 
     public fun new_max_heap<T: store + drop + copy>(): Heap<T> {
         Heap {
